@@ -1,0 +1,5 @@
+rootProject.name = 'docker-flex-unit-example'
+include ':swc'
+include ':swf'
+project(':swc').projectDir = "$rootDir/swc" as File
+project(':swf').projectDir = "$rootDir/swf" as File

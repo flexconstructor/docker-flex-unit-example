@@ -1,0 +1,120 @@
+import de.gesellix.gradle.docker.tasks.*
+import static de.gesellix.gradle.docker.tasks.DockerContainerTask.State.RESTARTED
+
+/**
+ * Docker demon must been running!
+ * Run:
+ * ````
+ * $ gradle build
+ *
+ * ````
+ * for builds and tests your flex project.
+ * More info about 'flexconstructor/docker-flexunit' docker container:
+ * https://hub.docker.com/r/flexconstructor/docker-flexunit/
+ */
+
+group = 'ru.flexconstructor.docker-flex-unit-example'
+version = '0.1-SNAPSHOT'
+
+/**
+ * Apply plugins.
+ */
+plugins {
+    id "com.github.ben-manes.versions" version "0.11.3"
+    id "de.gesellix.docker" version "2016-02-08T22-29-47"
+    id 'com.github.jlouns.cpe' version '0.4.1'
+}
+
+/**
+ * Setts docker environment variables.
+ */
+docker {
+    dockerHost = project.properties.'docker.local.host' ?:
+            System.getProperty('DOCKER_HOST')
+    certPath = System.getProperty('docker.cert.path') ?:
+            "${System.getProperty('user.home')}/.docker/machine/machines/default"
+}
+
+/**
+ * Define project variables:
+ *   1. Docker container volume dir;
+ *   2. Docker image ID;
+ *   3. Docker container ID;
+ *   4. Docker host.
+ */
+ext {
+    volumeDir = "/opt/flash/workspace"
+    dockerImageID = "videochat-test"
+    dockerContainerID = "gradle-test"
+    dockerHost="tcp://192.168.99.100:2376"
+}
+
+/**
+ * Copy project sources to docker build dir.
+ */
+task makeBuild(type: Copy){
+    from('.'){
+        include 'swc/**'
+        include 'swf/**'
+    }
+    from("docker/"){
+        include("*.gradle")
+    }
+    into "docker/build"
+}
+
+/**
+ * Remove docker build dir.
+ */
+task removeBuild(type: Delete){
+    delete(file("docker/build"))
+}
+
+/**
+ * Remove existed docker image.
+ */
+task removeDockerImage(type:DockerRmiTask, dependsOn: makeBuild){
+    imageId = dockerImageID
+}
+
+/**
+ * Just builds new docker image.
+ */
+task buildImage(type:DockerBuildTask, dependsOn: removeDockerImage){
+    imageName = dockerImageID
+    buildContextDirectory = file("docker")
+}
+
+/**
+ * Just runs new docker container.
+ */
+task runDockerContainer(type: DockerContainerTask,dependsOn:buildImage){
+    containerName = dockerContainerID
+    targetState = RESTARTED
+    image = dockerImageID
+    tag = "latest"
+    volumes = ["${projectDir}/docker/build:${volumeDir}"]
+}
+
+/**
+ * Default task build.
+ */
+task build(dependsOn: runDockerContainer)<<{
+    println("BUILD APPLICATION: ${dockerHost}")
+}
+
+/**
+ * Default task clean.
+ */
+task clean(dependsOn: removeBuild)<<{
+    println("CLEAN APPLICATION")
+}
+
+/**
+ * Default task test.
+ */
+task test(dependsOn: runDockerContainer)<<{
+    println("TEST APPLICATION")
+}
+
+

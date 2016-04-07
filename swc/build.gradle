@@ -1,0 +1,33 @@
+description = 'Compile SWC Library'
+apply plugin: 'gradlefx'
+type='swc'
+srcDirs=["src/main/flex"]
+testDirs=["src/test/flex"]
+buildscript {
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'org.gradlefx', name: 'gradlefx', version: '1.1'
+    }
+}
+
+dependencies{
+    test files(project.file("${flexUnitHome}/flexUnitTasks-4.3.0-20140410.jar").absolutePath,
+            project.file("${flexUnitHome}/flexunit-4.3.0-20140410-flex_4.12.0.swc").absolutePath,
+            project.file("${flexUnitHome}/flexunit-aircilistener-4.3.0-20140410-4.12.0.swc").absolutePath,
+            project.file("${flexUnitHome}/flexunit-cilistener-4.3.0-20140410-4.12.0.swc").absolutePath,
+            project.file("${flexUnitHome}/flexunit-flexcoverlistener-4.3.0-20140410-4.12.0.swc").absolutePath,
+            project.file("${flexUnitHome}/flexunit-uilistener-4.3.0-20140410-4.12.0.swc").absolutePath,
+            project.file("${flexUnitHome}/fluint-extensions-4.3.0-20140410-4.12.0.swc").absolutePath)
+}
+
+flexUnit {
+    additionalCompilerOptions = [
+            '-incremental=true',
+            '-headless-server=true'
+    ]
+    includes = ['**/Test*.as']
+
+}
