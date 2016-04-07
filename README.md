@@ -7,9 +7,8 @@ Docker demon must been running!
 Run:
 ````
 $ gradle build
-
 ````
 for builds and tests your flex project.
 
 More info about 'flexconstructor/docker-flexunit' docker container:
-[link](https://hub.docker.com/r/flexconstructor/docker-flexunit/)
+[flexconstructor/docker-flexunit](https://hub.docker.com/r/flexconstructor/docker-flexunit/)
