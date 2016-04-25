@@ -1,5 +1,8 @@
-import de.gesellix.gradle.docker.tasks.*
-import static de.gesellix.gradle.docker.tasks.DockerContainerTask.State.RESTARTED
+//import de.gesellix.gradle.docker.tasks.*
+import com.bmuschko.gradle.docker.tasks.container.*
+import com.bmuschko.gradle.docker.tasks.image.*
+
+//import static de.gesellix.gradle.docker.tasks.DockerContainerTask.State.RESTARTED
 
 /**
  * Docker demon must been running!
@@ -19,20 +22,34 @@ version = '0.1-SNAPSHOT'
 /**
  * Apply plugins.
  */
-plugins {
+/*plugins {
     id "com.github.ben-manes.versions" version "0.11.3"
     id "de.gesellix.docker" version "2016-02-08T22-29-47"
     id 'com.github.jlouns.cpe' version '0.4.1'
 }
+*/
+buildscript {
+    repositories {
+        jcenter()
+        mavenCentral()
+    }
 
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:2.6.7'
+    }
+}
+apply plugin: 'com.bmuschko.docker-remote-api'
 /**
  * Setts docker environment variables.
  */
-docker {
+/*docker {
     dockerHost = project.properties.'docker.local.host' ?:
             System.getProperty('DOCKER_HOST')
     certPath = System.getProperty('docker.cert.path') ?:
             "${System.getProperty('user.home')}/.docker/machine/machines/default"
+}*/
+docker {
+    url = 'http://192.168.59.103:2375'
 }
 
 /**
@@ -73,27 +90,44 @@ task removeBuild(type: Delete){
 /**
  * Remove existed docker image.
  */
-task removeDockerImage(type:DockerRmiTask, dependsOn: makeBuild){
+/*task removeDockerImage(type:DockerRmiTask, dependsOn: makeBuild){
     imageId = dockerImageID
 }
-
+*/
 /**
  * Just builds new docker image.
  */
-task buildImage(type:DockerBuildTask, dependsOn: removeDockerImage){
+/*task buildImage(type:DockerBuildTask, dependsOn: removeDockerImage){
     imageName = dockerImageID
     buildContextDirectory = file("docker")
 }
-
+*/
 /**
  * Just runs new docker container.
  */
-task runDockerContainer(type: DockerContainerTask,dependsOn:buildImage){
+/*task runDockerContainer(type: DockerContainerTask,dependsOn:buildImage){
     containerName = dockerContainerID
     targetState = RESTARTED
     image = dockerImageID
     tag = "latest"
     volumes = ["${projectDir}/docker/build:${volumeDir}"]
+}*/
+
+/*task createMyAppContainer(type: DockerCreateContainer,dependsOn: makeBuild) {
+
+    //targetImageId = "094897fd3ade"
+    attachStderr = true
+    attachStdout = true
+    containerName = dockerContainerID
+    image = "flexconstructor/docker-flexunit"
+    imageId = "2bf2cd621133"
+    volumes = "${projectDir}/docker/build:${volumeDir}"
+
+}*/
+
+
+task runDockerContainer(){
+println("RUN docker container")
 }
 
 /**
@@ -115,6 +149,31 @@ task clean(dependsOn: removeBuild)<<{
  */
 task test(dependsOn: runDockerContainer)<<{
     println("TEST APPLICATION")
+}
+
+task buildMyAppImage(type: DockerBuildImage) {
+    inputDir = file('docker/')
+    tag = 'test/myapp'
+}
+
+task createMyAppContainer(type: DockerCreateContainer) {
+    dependsOn buildMyAppImage
+    targetImageId { buildMyAppImage.getImageId() }
+    portBindings = ['8080:8080']
+}
+
+task startMyAppContainer(type: DockerStartContainer) {
+    dependsOn createMyAppContainer
+    targetContainerId { createMyAppContainer.getContainerId() }
+}
+
+task stopMyAppContainer(type: DockerStopContainer) {
+    targetContainerId { createMyAppContainer.getContainerId() }
+}
+
+task functionalTestMyApp(type: Test) {
+    dependsOn startMyAppContainer
+    finalizedBy stopMyAppContainer
 }
 
 
