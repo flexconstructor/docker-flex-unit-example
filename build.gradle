@@ -84,7 +84,7 @@ task removeDockerImage(type:DockerRmiTask, dependsOn: makeBuild){
 /**
  * Just builds new docker image.
  */
-task buildImage(type:DockerBuildTask){
+task buildImage(type:DockerBuildTask, dependsOn: removeDockerImage){
     imageName = dockerImageID
     buildContextDirectory = file("docker")
 }
